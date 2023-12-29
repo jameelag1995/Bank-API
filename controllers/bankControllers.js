@@ -132,8 +132,6 @@ export const withdraw = async (req, res, next) => {
         if (amount <= searchedUser.credit + searchedUser.cash) {
             if (amount <= searchedUser.cash) {
                 searchedUser.cash -= amount;
-            } else if (amount <= searchedUser.credit) {
-                searchedUser.credit -= amount;
             } else {
                 amount -= searchedUser.cash;
                 searchedUser.cash = 0;
