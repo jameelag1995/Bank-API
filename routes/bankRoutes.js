@@ -1,9 +1,12 @@
 import express from "express";
 import {
+    activate,
     createUser,
+    deactivate,
     deposit,
     getAllUsers,
     getUserById,
+    transfer,
     updateCredit,
     withdraw,
 } from "../controllers/bankControllers.js";
@@ -25,7 +28,16 @@ router.put("/deposit/:userId", deposit);
 // update user credit
 router.put("/updatecredit/:userId", updateCredit);
 
-// update user credit
+// withdraw money from user
 router.put("/withdraw/:userId", withdraw);
+
+// transfer money between users
+router.put("/transfer", transfer);
+
+// activate user by id
+router.put("/activate/:userId", activate);
+
+// deactivate user by id
+router.put("/deactivate/:userId", deactivate);
 
 export default router;

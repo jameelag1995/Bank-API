@@ -32,11 +32,22 @@ export const createUser = async (req, res, next) => {
             res.status(STATUS_CODE.CONFLICT);
             throw new Error("A user with the same name already exists");
         }
+        let chosenId = uuidv4();
+        let idIsUnique = false;
+        while (!idIsUnique) {
+            let index = users.findIndex((user) => user.id === chosenId);
+            if (index < 0) {
+                idIsUnique = true;
+            } else {
+                chosenId = uuidv4();
+            }
+        }
         const newUser = {
-            id: uuidv4(),
+            id: chosenId,
             fullName,
             cash,
             credit,
+            isActive: true,
         };
         users.push(newUser);
         writeUsersToFile(users);
@@ -146,4 +157,101 @@ export const withdraw = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
+};
+
+// @des   transfer money from user by id to another user by id
+// @route PUT /api/v1/bank/transfer
+export const transfer = async (req, res, next) => {
+    try {
+        let { fromId, toId, amount } = req.body;
+        const users = readUsersFromFile();
+        const userToTransferFrom = users.find((user) => user.id === fromId);
+        if (!userToTransferFrom) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error(
+                "User you are trying to transfer money from doesn't exist."
+            );
+        }
+        const userToTransferTo = users.find((user) => user.id === toId);
+        if (!userToTransferTo) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error(
+                "User you are trying to transfer money To doesn't exist."
+            );
+        }
+        if (amount <= userToTransferFrom.cash + userToTransferFrom.credit) {
+            const originalAmountToTransfer = amount;
+            if (amount <= userToTransferFrom.cash) {
+                userToTransferFrom.cash -= amount;
+            } else {
+                amount -= userToTransferFrom.cash;
+                userToTransferFrom.cash = 0;
+                userToTransferFrom.credit -= amount;
+            }
+            userToTransferTo.credit += originalAmountToTransfer;
+        } else {
+            res.status(STATUS_CODE.CONFLICT);
+            throw new Error(
+                "User trying to transfer doesn't have enough credit or cash to transfer."
+            );
+        }
+        writeUsersToFile(users);
+        res.send({ userToTransferFrom, userToTransferTo });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @des   Deactivate user by id
+// @route PUT /api/v1/bank/deactivate/:userId
+export const deactivate = (req, res, next) => {
+    try {
+        const users = readUsersFromFile();
+        const userId = req.params.userId;
+        const userToDeactivate = users.find((user) => user.id === userId);
+        if (!userToDeactivate) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error("No user found with this id");
+        }
+        userToDeactivate.isActive = false;
+        writeUsersToFile(users);
+        res.send(userToDeactivate);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @des   Activate user by id
+// @route PUT /api/v1/bank/activate/:userId
+export const activate = (req, res, next) => {
+    try {
+        const users = readUsersFromFile();
+        const userId = req.params.userId;
+        const userToActivate = users.find((user) => user.id === userId);
+        if (!userToActivate) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error("No user found with this id");
+        }
+        userToActivate.isActive = true;
+        writeUsersToFile(users);
+        res.send(userToActivate);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getInfo = (req, res, next) => {
+    res.send({
+        getAllUsers: "GET /api/v1/bank - Returns All Users Info",
+        createUser: "POST /api/v1/bank - Creates New User",
+        getUserById: "GET /api/v1/bank/:userId - Returns User Info",
+        deposit:
+            "PUT /api/v1/bank/deposit/:userId - Deposit Money To User's Cash",
+        updateCredit:
+            "PUT /api/v1/bank/updatecredit/:userId - Update User's Credit",
+        withdraw:
+            "PUT /api/v1/bank/withdraw/:userId - Withdraw Money From User's Account",
+        transfer:
+            "PUT /api/v1/bank/transfer - Transfer Money Between Bank Accounts",
+    });
 };
