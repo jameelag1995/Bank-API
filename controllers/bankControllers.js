@@ -36,7 +36,7 @@ export const createUser = async (req, res, next) => {
         let idIsUnique = false;
         while (!idIsUnique) {
             let index = users.findIndex((user) => user.id === chosenId);
-            if (index < 0) {
+            if (index === BANK_CONSTANTS.USER_NOT_FOUND) {
                 idIsUnique = true;
             } else {
                 chosenId = uuidv4();
@@ -240,11 +240,80 @@ export const activate = (req, res, next) => {
     }
 };
 
+// @des   filter active users by balance
+// @route GET /api/v1/bank/filteractivebybalance/:balance
+export const filterActiveUsersByBalance = (req, res, next) => {
+    try {
+        const users = readUsersFromFile();
+        const balance = parseInt(req.params.balance);
+        if (!balance) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error("balance must be a number!");
+        }
+        const filteredUsers = users.filter(
+            (user) => user.credit + user.cash >= balance && user.isActive
+        );
+        if (!filteredUsers) {
+            res.status(STATUS_CODE.NOT_FOUND);
+            throw new Error("No such users");
+        }
+        res.send(filteredUsers);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @des   filter active users by cash
+// @route GET /api/v1/bank/filteractivebycash/:cash
+export const filterActiveUsersByCash = (req, res, next) => {
+    try {
+        const users = readUsersFromFile();
+        const cash = parseInt(req.params.cash);
+        if (!cash) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error("cash must be a number!");
+        }
+        const filteredUsers = users.filter(
+            (user) => user.cash >= cash && user.isActive
+        );
+        if (!filteredUsers) {
+            res.status(STATUS_CODE.NOT_FOUND);
+            throw new Error("No such users");
+        }
+        res.send(filteredUsers);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @des   filter active users by credit
+// @route GET /api/v1/bank/filteractivebycredit/:credit
+export const filterActiveUsersByCredit = (req, res, next) => {
+    try {
+        const users = readUsersFromFile();
+        const credit = parseInt(req.params.credit);
+        if (!credit) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error("credit must be a number!");
+        }
+        const filteredUsers = users.filter(
+            (user) => user.credit >= credit && user.isActive
+        );
+        if (!filteredUsers) {
+            res.status(STATUS_CODE.NOT_FOUND);
+            throw new Error("No such users");
+        }
+        res.send(filteredUsers);
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const getInfo = (req, res, next) => {
     res.send({
-        getAllUsers: "GET /api/v1/bank - Returns All Users Info",
+        getAllUsers: "GET /api/v1/bank - Shows All Users Info",
         createUser: "POST /api/v1/bank - Creates New User",
-        getUserById: "GET /api/v1/bank/:userId - Returns User Info",
+        getUserById: "GET /api/v1/bank/:userId - Shows User Info",
         deposit:
             "PUT /api/v1/bank/deposit/:userId - Deposit Money To User's Cash",
         updateCredit:
@@ -253,5 +322,11 @@ export const getInfo = (req, res, next) => {
             "PUT /api/v1/bank/withdraw/:userId - Withdraw Money From User's Account",
         transfer:
             "PUT /api/v1/bank/transfer - Transfer Money Between Bank Accounts",
+        filterActiveUsersByBalance:
+            "GET /api/v1/bank/filteractivebybalance/:balance - Shows Active Users with Given Balance",
+        filterActiveUsersByCash:
+            "GET /api/v1/bank/filteractivebycash/:cash - Shows Active Users with Given Cash",
+        filterActiveUsersByCredit:
+            "GET /api/v1/bank/filteractivebycredit/:credit - Shows Active Users with Given Credit",
     });
 };
