@@ -92,14 +92,16 @@ export const deposit = (req, res, next) => {
             res.status(STATUS_CODE.NOT_FOUND);
             throw new Error("No user found with this id");
         }
-        const { amount } = req.body;
+        let { amount } = req.body;
         if (
-            amount <= BANK_CONSTANTS.MINIMUM_AMOUNT ||
-            typeof amount !== "number"
+            !amount ||
+            !parseInt(amount) ||
+            parseInt(amount) <= BANK_CONSTANTS.MINIMUM_AMOUNT
         ) {
             res.status(STATUS_CODE.BAD_REQUEST);
-            throw new Error("Amount of deposit must be positive number");
+            throw new Error("Request body must contain positive number amount");
         }
+        amount = parseInt(amount);
 
         searchedUser.cash += amount;
         writeUsersToFile(users);
@@ -120,16 +122,16 @@ export const updateCredit = async (req, res, next) => {
             res.status(STATUS_CODE.NOT_FOUND);
             throw new Error("No user found with this id");
         }
-        const { amount } = req.body;
+        let { amount } = req.body;
         if (
-            amount <= BANK_CONSTANTS.MINIMUM_AMOUNT ||
-            typeof amount !== "number"
+            !amount ||
+            !parseInt(amount) ||
+            parseInt(amount) <= BANK_CONSTANTS.MINIMUM_AMOUNT
         ) {
             res.status(STATUS_CODE.BAD_REQUEST);
-            throw new Error(
-                "Amount of credit to update must be positive number"
-            );
+            throw new Error("Request body must contain positive number amount");
         }
+        amount = parseInt(amount);
 
         searchedUser.credit += amount;
         writeUsersToFile(users);
@@ -151,15 +153,16 @@ export const withdraw = async (req, res, next) => {
             throw new Error("No user found with this id");
         }
         let { amount } = req.body;
+
         if (
-            amount <= BANK_CONSTANTS.MINIMUM_AMOUNT ||
-            typeof amount !== "number"
+            !amount ||
+            !parseInt(amount) ||
+            parseInt(amount) <= BANK_CONSTANTS.MINIMUM_AMOUNT
         ) {
             res.status(STATUS_CODE.BAD_REQUEST);
-            throw new Error(
-                "Amount of money to withdraw must be positive number"
-            );
+            throw new Error("Request body must contain positive number amount");
         }
+        amount = parseInt(amount);
         if (amount <= searchedUser.credit + searchedUser.cash) {
             if (amount <= searchedUser.cash) {
                 searchedUser.cash -= amount;
@@ -183,23 +186,30 @@ export const withdraw = async (req, res, next) => {
 // @route PUT /api/v1/bank/transfer
 export const transfer = async (req, res, next) => {
     try {
-        let { fromId, toId, amount } = req.body;
+        let { senderId, receiverId, amount } = req.body;
+        if (!senderId || !receiverId || !amount) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error(
+                "Request body must contain senderId, receiverId and amount"
+            );
+        }
         const users = readUsersFromFile();
-        const userToTransferFrom = users.find((user) => user.id === fromId);
+        const userToTransferFrom = users.find((user) => user.id === senderId);
         if (
-            typeof amount !== "number" ||
-            amount < BANK_CONSTANTS.MINIMUM_AMOUNT
+            !parseInt(amount) ||
+            parseInt(amount) <= BANK_CONSTANTS.MINIMUM_AMOUNT
         ) {
             res.status(STATUS_CODE.BAD_REQUEST);
-            throw new Error("Invalid amount, amount must be positive number");
+            throw new Error("Request body must contain positive number amount");
         }
+        amount = parseInt(amount);
         if (!userToTransferFrom) {
             res.status(STATUS_CODE.BAD_REQUEST);
             throw new Error(
                 "User you are trying to transfer money from doesn't exist."
             );
         }
-        const userToTransferTo = users.find((user) => user.id === toId);
+        const userToTransferTo = users.find((user) => user.id === receiverId);
         if (!userToTransferTo) {
             res.status(STATUS_CODE.BAD_REQUEST);
             throw new Error(
@@ -277,6 +287,7 @@ export const filterActiveUsersByBalance = (req, res, next) => {
             res.status(STATUS_CODE.BAD_REQUEST);
             throw new Error("balance must be a number!");
         }
+
         const filteredUsers = users.filter(
             (user) => user.credit + user.cash >= balance && user.isActive
         );
