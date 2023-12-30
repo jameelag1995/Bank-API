@@ -23,9 +23,16 @@ export const createUser = async (req, res, next) => {
             res.status(STATUS_CODE.BAD_REQUEST);
             throw new Error("full name is required");
         }
-        if (!cash || !credit) {
+
+        if (!cash) {
             cash = 0;
+        }
+        if (!credit) {
             credit = 0;
+        }
+        if (typeof cash !== "number" || typeof credit !== "number") {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error("Cash and Credit Must be positive numbers");
         }
         const users = readUsersFromFile();
         if (users.some((user) => user.fullName === fullName)) {
@@ -86,9 +93,12 @@ export const deposit = (req, res, next) => {
             throw new Error("No user found with this id");
         }
         const { amount } = req.body;
-        if (amount <= BANK_CONSTANTS.MINIMUM_AMOUNT) {
+        if (
+            amount <= BANK_CONSTANTS.MINIMUM_AMOUNT ||
+            typeof amount !== "number"
+        ) {
             res.status(STATUS_CODE.BAD_REQUEST);
-            throw new Error("Amount of deposit must be positive");
+            throw new Error("Amount of deposit must be positive number");
         }
 
         searchedUser.cash += amount;
@@ -100,7 +110,7 @@ export const deposit = (req, res, next) => {
 };
 
 // @des   Update user credit by id
-// @route PUT /api/v1/bank/updatecredit/:userId
+// @route PUT /api/v1/bank/update-credit/:userId
 export const updateCredit = async (req, res, next) => {
     try {
         const userId = req.params.userId;
@@ -111,9 +121,14 @@ export const updateCredit = async (req, res, next) => {
             throw new Error("No user found with this id");
         }
         const { amount } = req.body;
-        if (amount <= BANK_CONSTANTS.MINIMUM_AMOUNT) {
+        if (
+            amount <= BANK_CONSTANTS.MINIMUM_AMOUNT ||
+            typeof amount !== "number"
+        ) {
             res.status(STATUS_CODE.BAD_REQUEST);
-            throw new Error("Amount of credit to update must be positive");
+            throw new Error(
+                "Amount of credit to update must be positive number"
+            );
         }
 
         searchedUser.credit += amount;
@@ -136,9 +151,14 @@ export const withdraw = async (req, res, next) => {
             throw new Error("No user found with this id");
         }
         let { amount } = req.body;
-        if (amount <= BANK_CONSTANTS.MINIMUM_AMOUNT) {
+        if (
+            amount <= BANK_CONSTANTS.MINIMUM_AMOUNT ||
+            typeof amount !== "number"
+        ) {
             res.status(STATUS_CODE.BAD_REQUEST);
-            throw new Error("Amount of money to withdraw must be positive");
+            throw new Error(
+                "Amount of money to withdraw must be positive number"
+            );
         }
         if (amount <= searchedUser.credit + searchedUser.cash) {
             if (amount <= searchedUser.cash) {
@@ -166,6 +186,13 @@ export const transfer = async (req, res, next) => {
         let { fromId, toId, amount } = req.body;
         const users = readUsersFromFile();
         const userToTransferFrom = users.find((user) => user.id === fromId);
+        if (
+            typeof amount !== "number" ||
+            amount < BANK_CONSTANTS.MINIMUM_AMOUNT
+        ) {
+            res.status(STATUS_CODE.BAD_REQUEST);
+            throw new Error("Invalid amount, amount must be positive number");
+        }
         if (!userToTransferFrom) {
             res.status(STATUS_CODE.BAD_REQUEST);
             throw new Error(
@@ -241,7 +268,7 @@ export const activate = (req, res, next) => {
 };
 
 // @des   filter active users by balance
-// @route GET /api/v1/bank/filteractivebybalance/:balance
+// @route GET /api/v1/bank/filter-active-by-balance/:balance
 export const filterActiveUsersByBalance = (req, res, next) => {
     try {
         const users = readUsersFromFile();
@@ -264,7 +291,7 @@ export const filterActiveUsersByBalance = (req, res, next) => {
 };
 
 // @des   filter active users by cash
-// @route GET /api/v1/bank/filteractivebycash/:cash
+// @route GET /api/v1/bank/filter-active-by-cash/:cash
 export const filterActiveUsersByCash = (req, res, next) => {
     try {
         const users = readUsersFromFile();
@@ -287,7 +314,7 @@ export const filterActiveUsersByCash = (req, res, next) => {
 };
 
 // @des   filter active users by credit
-// @route GET /api/v1/bank/filteractivebycredit/:credit
+// @route GET /api/v1/bank/filter-active-by-credit/:credit
 export const filterActiveUsersByCredit = (req, res, next) => {
     try {
         const users = readUsersFromFile();
@@ -317,16 +344,18 @@ export const getInfo = (req, res, next) => {
         deposit:
             "PUT /api/v1/bank/deposit/:userId - Deposit Money To User's Cash",
         updateCredit:
-            "PUT /api/v1/bank/updatecredit/:userId - Update User's Credit",
+            "PUT /api/v1/bank/update-credit/:userId - Update User's Credit",
         withdraw:
             "PUT /api/v1/bank/withdraw/:userId - Withdraw Money From User's Account",
         transfer:
             "PUT /api/v1/bank/transfer - Transfer Money Between Bank Accounts",
+        activate: "PUT /api/v1/bank/activate/:userId - Activates User",
+        deactivate: "PUT /api/v1/bank/deactivate/:userId - Deactivates User",
         filterActiveUsersByBalance:
-            "GET /api/v1/bank/filteractivebybalance/:balance - Shows Active Users with Given Balance",
+            "GET /api/v1/bank/filter-active-by-balance/:balance - Shows Active Users with Given Balance",
         filterActiveUsersByCash:
-            "GET /api/v1/bank/filteractivebycash/:cash - Shows Active Users with Given Cash",
+            "GET /api/v1/bank/filter-active-by-cash/:cash - Shows Active Users with Given Cash",
         filterActiveUsersByCredit:
-            "GET /api/v1/bank/filteractivebycredit/:credit - Shows Active Users with Given Credit",
+            "GET /api/v1/bank/filter-active-by-credit/:credit - Shows Active Users with Given Credit",
     });
 };

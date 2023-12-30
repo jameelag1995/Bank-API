@@ -29,7 +29,7 @@ router.get("/:userId", getUserById);
 router.put("/deposit/:userId", deposit);
 
 // update user credit
-router.put("/updatecredit/:userId", updateCredit);
+router.put("/update-credit/:userId", updateCredit);
 
 // withdraw money from user
 router.put("/withdraw/:userId", withdraw);
@@ -44,12 +44,12 @@ router.put("/activate/:userId", activate);
 router.put("/deactivate/:userId", deactivate);
 
 // filter active users by balance
-router.get("/filteractivebybalance/:balance", filterActiveUsersByBalance);
+router.get("/filter-active-by-balance/:balance", filterActiveUsersByBalance);
 
 // filter active users by cash
-router.get("/filteractivebycash/:cash", filterActiveUsersByCash);
+router.get("/filter-active-by-cash/:cash", filterActiveUsersByCash);
 
 // filter active users by credit
-router.get("/filteractivebycredit/:credit", filterActiveUsersByCredit);
+router.get("/filter-active-by-credit/:credit", filterActiveUsersByCredit);
 
 export default router;
